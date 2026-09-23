@@ -1,587 +1,192 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="description"
-        content="SuperQ-GRASP: Superquadrics-based Grasp Pose Estimation on
-        Larger Objects for Mobile-Manipulation">
-  <meta name="keywords" content="Manipulation, Large Objects, Superquadrics, Primitive Decomposition">
+  <meta name="description" content="Grasp-TAGS: task-aware grasp selection via critic distillation for prehensile loco-manipulation.">
+  <meta name="keywords" content="robotics, loco-manipulation, large-object rearrangement, grasp selection, reinforcement learning">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SuperQ-Grasp</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz" crossorigin="anonymous"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+  <title>Grasp-TAGS</title>
 
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FV4ZJ9PVSV"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-FV4ZJ9PVSV');
-  </script>
-
-  <script>
-    function updateSingleVideo() {
-      var object = document.getElementById("single-menu-objects").value;
-
-
-      var gif1 = document.getElementById("synthetic-data-superq-grasp");
-      gif1.src = "media/results/synthetic_data/" + 
-                  object +
-                  "-superq-grasp.gif"
-      var gif2 = document.getElementById("synthetic-data-contact-graspnet");
-      gif2.src = "media/results/synthetic_data/" + 
-                  object +
-                  "-contact-graspnet.gif"
-      var gif3 = document.getElementById("synthetic-data-contact-graspnet-depth");
-      gif3.src = "media/results/synthetic_data/" + 
-                  object +
-                  "-contact-graspnet-depth.gif"
-    }
-    function updateSingleVideoSmall() {
-      var object = document.getElementById("single-menu-small-objects").value;
-
-
-      var gif1 = document.getElementById("synthetic-data-small-superq-grasp");
-      gif1.src = "media/results/synthetic_data/" + 
-                  object +
-                  "-superq-grasp.gif"
-      var gif2 = document.getElementById("synthetic-data-small-contact-graspnet");
-      gif2.src = "media/results/synthetic_data/" + 
-                  object +
-                  "-contact-graspnet.gif"
-      var gif3 = document.getElementById("synthetic-data-small-contact-graspnet-depth");
-      gif3.src = "media/results/synthetic_data/" + 
-                  object +
-                  "-contact-graspnet-depth.gif"
-    }
-
-    function updateRealWorldVideo() {
-      var task = document.getElementById("single-menu-real-world").value;
-
-
-      var video = document.getElementById("real-world-video");
-      video.src = "media/results/real-world/" + 
-                  task + 
-                  ".mp4"
-      video.playbackRate = 1;
-      video.play();
-    }
-
-  </script>
-
-  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
-        rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
   <link rel="stylesheet" href="./static/css/bulma.min.css">
   <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
   <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
-  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
   <link rel="stylesheet" href="./static/css/index.css">
-
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
   <script src="./static/js/index.js"></script>
-  <style>
-    .synthetic-data-image-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start; /* Align to the top of the container */
-    }
-
-    .synthetic-data-image-container figure {
-        width: 33%; /* Adjust width for each figure */
-        text-align: center; /* Center the caption */
-        margin: 10px;
-    }
-    .synthetic-data-image-container video {
-        width: 33%; /* Adjust width for each figure */
-        text-align: center; /* Center the caption */
-        margin: 10px;
-    }
-
-    .synthetic-data-image-container img {
-        width: 100%; /* Make image take up the entire figure width */
-        height: auto; /* Keep aspect ratio */
-    }
-
-    figcaption {
-        font-size: 0.9em; /* Smaller font for captions */
-        color: #000; /* Black color for captions */
-        margin-top: 5px;
-    }
-  </style>
 </head>
-<body onload="updateSingleVideo(); updateSingleVideoSmall(); supdateRealWorldVideo();">
 
-<section class="author">
-  <div class="author-body">
+<body>
+  <section class="author">
+    <div class="author-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">Grasp-TAGS</h1>
+            <h2 class="subtitle is-2 publication-subtitle">Task-Aware Grasp Selection via Critic Distillation<br>for Prehensile Loco-Manipulation</h2>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">Xun Tu</span>,
+              <span class="author-block">Minghao Zou</span>,
+              <span class="author-block">Karthik Desingh</span>
+            </div>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">University of Minnesota, Twin Cities</span>
+            </div>
+            <div class="publication-links">
+              <span class="link-block">
+                <a href="paper/Tu_et_al_2026_prehensile.pdf" class="external-link button is-normal is-rounded is-dark">
+                  <span>Paper</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero teaser">
+    <div class="hero-body">
+      <div class="container is-max-widescreen">
+        <figure class="project-figure teaser-figure">
+          <img src="media/intro/teaser_cropped.png" alt="Grasp-TAGS overview: candidate grasps lead to different rearrangement outcomes, and the critic-distilled selector chooses the grasp with highest predicted utility.">
+          <figcaption>
+            Different feasible initial grasps can yield substantially different loco-manipulation outcomes. Grasp-TAGS ranks candidate grasps by predicted downstream utility before executing the policy.
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero is-light is-small">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered has-text-centered">
+          <div class="column is-four-fifths">
+            <h2 class="title is-3">Abstract</h2>
+            <div class="content has-text-justified">
+              <p>
+                Loco-manipulation, in which mobile manipulators coordinate locomotion and manipulation over long horizons, is an important paradigm for large-object rearrangement in service robotics and warehouse automation. Reliably executing these tasks remains challenging because performance depends on complex robot-object interaction dynamics. Existing learning-based approaches reduce the need for accurate dynamics models, but typically assume a fixed or predefined initial grasp. In practice, different feasible grasps can lead to substantially different downstream manipulation performance.
+              </p>
+              <p>
+                We propose <strong>Grasp-TAGS</strong>, a task-aware grasp selection framework for goal-conditioned large-object rearrangement. A unified PPO policy is trained across multiple initial grasp configurations, and its learned critic is distilled into a lightweight grasp utility network that ranks candidates using only pre-interaction grasp and goal information. At inference time, the highest-utility grasp is selected before the downstream policy executes. Simulation experiments on household objects show improved rearrangement success over fixed single-grasp policies and random grasp selection, together with lower final orientation error across the evaluated objects.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-widescreen">
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Task-Aware Grasp Selection</h2>
+          <div class="content has-text-justified">
+            <p>
+              Large objects such as chairs, carts, and buckets require coordinated base and arm motion to reach a desired planar pose. Although several candidate grasps may be feasible and stable, each establishes a different robot-object interaction configuration. Those configurations affect controllability, long-horizon behavior, and ultimately task success.
+            </p>
+            <p>
+              Grasp-TAGS treats the initial grasp as a task decision rather than a fixed setup step. For a rearrangement goal, it evaluates the expected utility of every candidate grasp and selects the one most suitable for the downstream prehensile manipulation task.
+            </p>
+          </div>
+        </div>
+      </div>
+      <figure class="project-figure">
+        <img src="media/intro/hierarchy.png" alt="Grasp-TAGS pipeline showing PPO training, critic distillation into a grasp selection module, and deployment.">
+        <figcaption>
+          Grasp-TAGS first trains a hierarchical PPO policy, then distills its critic into a grasp selection module. At deployment, the module selects a candidate grasp using non-privileged pre-interaction observations.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section is-light">
+    <div class="container is-max-widescreen">
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Method</h2>
+          <div class="content has-text-justified">
+            <p>
+              The framework uses a hierarchical controller: a pretrained low-level locomotion controller maintains stable base motion, while a high-level PPO policy produces task-level base-velocity and arm-joint commands. During training, each episode samples one feasible initial grasp and a target object pose. Training a single grasp-conditioned policy across candidates captures the interaction dynamics of multiple grasp configurations while yielding a common value function for comparison.
+            </p>
+            <p>
+              The PPO critic estimates long-horizon return from the initial state and therefore encodes the expected downstream utility of each grasp. Because the critic depends on simulator-only physical information, Grasp-TAGS distills its predictions into a grasp utility network that receives only the candidate grasp configuration and goal information available before contact. The distilled network ranks the candidates at inference time, and the selected grasp initializes the learned manipulation policy.
+            </p>
+            <ul>
+              <li>A unified goal- and grasp-conditioned loco-manipulation policy trained across multiple feasible grasps.</li>
+              <li>A critic-distilled utility network for selecting a grasp before physical interaction.</li>
+              <li>Simulation evaluation on chairs, carts, and buckets with goal-conditioned planar rearrangement tasks.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-widescreen">
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Results</h2>
+          <div class="content has-text-justified">
+            <p>
+              We evaluate in IsaacLab on eight household objects: three chairs, two carts, and three buckets. The comparison includes the best policy trained for an individual grasp, a unified grasp-conditioned policy with random candidate selection, and the full Grasp-TAGS pipeline. Across all evaluated objects, task-aware selection achieves the highest success rate and consistently reduces final angular error.
+            </p>
+            <p>
+              For Chair1, Grasp-TAGS reaches a 93.65% success rate, compared with 75.88% for random grasp selection and 69.02–78.20% for the individual single-grasp policies. The qualitative comparison below illustrates why: grasping the chair backrest enables reliable alignment, while armrest grasps lead to less favorable downstream behavior.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <figure class="project-figure">
+        <img src="media/results/synthetic_data/qualitative.png" alt="Qualitative comparison of three initial chair grasps: the backrest grasp succeeds, while one armrest grasp has average alignment and another fails.">
+        <figcaption>
+          Qualitative comparison across initial grasp poses. The backrest grasp produces better final alignment with the target pose than the two armrest grasps.
+        </figcaption>
+      </figure>
+
+      <figure class="project-figure results-figure">
+        <img src="media/results/synthetic_data/success-rates-1.png" alt="Bar chart comparing policy success rates by object. Grasp-TAGS has the highest success rate for Chair1–3, Cart1–2, and Bucket1–3.">
+        <figcaption>
+          Success rates for the best single-grasp policy, the multi-grasp policy with random selection, and Grasp-TAGS. The task-aware selector achieves the highest rate for every evaluated object.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section is-light">
     <div class="container is-max-desktop">
       <div class="columns is-centered">
-        <div class="column has-text-centered">
-          <h1 class="title is-1 publication-title">SuperQ-GRASP: <br></h1>
-          <h2 class="subtitle is-2 publication-subtitle">Superquadrics-based Grasp Pose Estimation <br>on
-            Larger Objects for Mobile-Manipulation</h2>
-          <h3 class="title is-4 conference-authors"><a target="_blank" href="https://www.ieee-ras.org/conferences-workshops/technically-co-sponsored/icar">ICRA 2025</a></h3>
-          <div class="is-size-5 publication-authors">
-            <span class="author-block">
-              <a target="_blank">Xun Tu</a>,</span>
-            <span class="author-block">
-              <a target="_blank">Karthik Desingh</a>,</span>
-          </div>
-
-          <div class="is-size-5 publication-authors">
-            <span class="author-block">University of Minnesota, Twin Cities</span>
-          </div>
-          <!-- Project under review should not be released yet -->
-          <!-- Refer to PerAct if you want to add the links back-->
-            <!-- Arxiv Link. -->
-            <span class="link-block">
-              <a target="_blank" href="https://ieeexplore.ieee.org/document/11127681"
-                 class="external-link button is-normal is-rounded is-dark">
-                <span class="icon">
-                    <i class="fas fa-file"></i>
-                </span>
-                <span>IEEE</span>
-              </a>
-            </span>
-            <span class="link-block">
-              <a target="_blank" href="https://bit.ly/4foT0aE"
-                 class="external-link button is-normal is-rounded is-dark">
-                <span class="icon">
-                    <i class="fas fa-file"></i>
-                </span>
-                <span>ArXiv</span>
-              </a>
-            </span>
-
-            <span class="link-block">
-              <a target="_blank" href="https://youtu.be/CL_qik__k8c"
-                 class="external-link button is-normal is-rounded is-dark">
-                <span class="icon">
-                    <i class="fas fa-file"></i>
-                </span>
-                <span>Video</span>
-              </a>
-            </span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-<br>
-<br>
-<br>
-<section class="hero teaser">
-  <div class="container is-fullhd">
-    <div class="hero-body">
-      <div class="container">
-        <div class="columns is-vcentered  is-centered">
-          <video id="teaser" autoplay muted loop height="100%">
-            <source src="media/intro/teaser.mp4"
-                    type="video/mp4">
-          </video>
-          </br>
-        </div>
-        <br>
-        <h2 class="subtitle has-text-centered">
-        <span class="dsuperq-grasp">SuperQ-GRASP</span> is a grasp pose estimation method designed specifically to grasp the <b>large</b> objects <br>uncommon in a tabletop scenario based on <b>Primitive Decomposition</b><br></h2>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<section class="hero is-light is-small">
-  <div class="container is-max-desktop">
-    <!-- Abstract. -->
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h3 class="title is-4">Abstract</h3>
-        <div class="content has-text-justified">
-          <p>
-            Grasp planning and estimation have been a long-standing research problem in robotics, 
-            with two main approaches to find graspable poses on the objects: 1) geometric approach, 
-            which relies on 3D models of objects and the gripper to estimate valid grasp poses, and 2) 
-            data-driven, learning-based approach, with models trained to identify grasp poses from raw 
-            sensor observations. The latter assumes comprehensive geometric coverage during the training phase. 
-            However, the data-driven approach is typically biased toward tabletop scenarios and struggle to 
-            generalize to out-of-distribution scenarios with larger objects (e.g. chair). Additionally, 
-            raw sensor data (e.g. RGB-D data) from a single view of these larger objects is often incomplete 
-            and necessitates additional observations. In this paper, we take a geometric approach, leveraging 
-            advancements in object modeling (e.g. NeRF) to build an implicit model by taking RGB images from 
-            views around the target object. This model enables the extraction of explicit mesh model while also 
-            capturing the visual appearance from novel viewpoints that is useful for perception tasks like object 
-            detection and pose estimation. We further decompose the NeRF-reconstructed 3D mesh into superquadrics (SQs) 
-            - parametric geometric primitives, each mapped to a set of precomputed grasp poses, allowing grasp 
-            composition on the target object based on these primitives.Our proposed pipeline overcomes the problems: 
-            a) noisy depth and incomplete view of the object, with a modeling step, and b) generalization to objects 
-            of any size. 
-          </p>
-
-          <p></p>
-            We validate the performance of our pipeline on 5 different <b>large objects</b>
-            at <b>different poses</b> in real-world experiments using
-            <a target="_blank" href="https://bostondynamics.com/products/spot/">SPOT from Boston Dynamics</a>
-          </p>
-         
-        </div>
-      </div>
-    </div>
-    <!--/ Abstract. -->
-
-    <div class="hero-body">
-      <div class="container">
-        <div class="synthetic-data-image-container">
-          <video poster="" id="chair1-1" autoplay controls muted loop height="100%">
-            <source src="media/intro/chair1-1.mp4"
-                    type="video/mp4">
-          </video>
-          <video poster="" id="chair2-1" autoplay controls muted loop height="100%">
-            <source src="media/intro/chair2-1.mp4"
-                    type="video/mp4">
-          </video>
-          <video poster="" id="chair2-2" autoplay controls muted loop height="100%">
-            <source src="media/intro/chair2-2.mp4"
-                    type="video/mp4">
-          </video>
-        </div>
-        <div class="synthetic-data-image-container">
-          <video poster="" id="luggage-case" autoplay controls muted loop height="100%">
-            <source src="media/intro/luggage-case-1.mp4"
-                    type="video/mp4">
-          </video>
-          <video poster="" id="table" autoplay controls muted loop height="70%">
-            <source src="media/intro/table-1.mp4"
-                    type="video/mp4">
-          </video>
-          <video poster="" id="vacuum-cleaner" autoplay controls muted loop height="70%">
-            <source src="media/intro/vacuum-cleaner-1.mp4"
-                    type="video/mp4">
-          </video>
-        </div>
-        <!-- More teaser videos -->
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<section class="section">
-  <!-- Paper video. -->
-  <div class="container is-max-widescreen">
-    <div class="column is-two-thirds">
-      <h1 class="title is-3">Video</h1>
-      <div style="text-align: center; width: 150%">
-        <!-- <video controls>
-          <source style="text-align: center; width: 100%" src="https://youtu.be/CL_qik__k8c" type="video/mp4">
-        Your browser does not support the video tag.
-        </video> -->
-        <iframe width="760" height="515" 
-        src="https://www.youtube.com/embed/CL_qik__k8c?si=lbot1JtUxX25o5ni" 
-        title="YouTube video player" frameborder="0" 
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-      </div>
-    </div>
-  </div>
-
-</section>
-
-<section class="section">
-  <div class="container is-max-widescreen">
-
-    <div class="rows">
-
-
-    <!-- Animation. -->
-    <div class="rows is-centered ">
-      <div class="row is-full-width">
-        <h2 class="title is-3">SuperQ-Grasp</h2>
-
-        <!-- Interpolating. -->
-        <h3 class="title is-4">Grasp Pose Estimation</h3>
-        <div class="content has-text-justified">
-        <!-- <br> -->
-        </div>
-        <p>
-          The primary contribution of the project is to propose a grasp pose estimation method on the large objects that are uncommon 
-          in table scenarios. The method involves decomposing the target object mesh into several primitive shapes, 
-          predicting grasp poses for each individual primitive, and subsequently filtering out the invalid poses to maintain only the valid ones. 
-          In this context, <a href="https://superquadrics.com/">Superquadrics</a> are utilized as the primitive shapes, 
-          and <a target="_blank" href="https://github.com/ChirikjianLab/Marching-Primitives">Marching
-          Primitives</a> is employed to decompose the target object's mesh into smaller superquadrics, upon which grasp pose estimation is applied.
-        </p>
-        </br>
-        </br>
-        <figure>
-          <p style="text-align:center;"> 
-          <img src="media/figures/pipeline.jpg" class="interpolation-image" 
-          alt="Overview of the Graps Pose Estimation module"/>
-         <figcaption style="text-align:center;">Fig.2 - A comprehensive pipeline specifically
-           designed to estimate grasp poses for larger objects.
-            By representing an object as a collection of superquadrics,
-             the proposed grasp pose estimation method (SuperQ-GRASP) 
-             estimates the grasp pose closest to the current gripper by 
-             selecting the nearest superquadric and its corresponding valid 
-             grasp candidates. Combined with the object detection and pose estimation 
-             module, our pipeline enables the mobile manipulator to perform grasping tasks effectively.
-         </figcaption>
-        </p>
-        </figure>
-        </br>
-        </br>
-        <h3 class="title is-4">Real-world Experiments</h3>
-          <p class="justify">
-            We validate the performance of our pipeline on the robotic platform
-            <a target="_blank" href="https://bostondynamics.com/products/spot/">SPOT from Boston Dynamics</a>.
-             We use <a target="_blank" href="https://github.com/NVlabs/instant-ngp">instant-NGP</a> to construct the target object mesh.
-             Also, unlike synthetic data in simulation, the object pose with respect to the gripper in real-world experiments is unknown in advance.
-             Therefore, to deal with this issue, we depend on <a href="https://github.com/IDEA-Research/Grounded-Segment-Anything">GroundingSAM</a> 
-             and <a href="https://zju3dv.github.io/loftr/">LoFTR</a> to estimate the object pose relative to the gripper. 
-          </p>
-        <br/>
-        <br/>
-
-        <!--/ Re-rendering. -->
-
-        <h2 class="title is-3">Results</h2>
-
-        <h3 class="title is-4">Experiments on synthetic data</h3>
-          We create a dataset of 20 objects with 15 synthetic objects (3 chairs, 3 carts, 2 buckets, 2 boxes, 2 suitcases, 
-          2 tables, and 1 folding chair) selected from <a href="https://sapien.ucsd.edu/browse">PartNet-Mobility</a> 
-          , and 5 real-world objects 
-          (2 chairs, 1 vacuum cleaner, 1 suitcase, and 1 table). These objects represent common large objects encountered daily 
-          and cover a diverse range of geometrical structures. <br><br>
-          We establish two baselines to capture variations in how <a href="https://github.com/NVlabs/contact_graspnet">
-          Contact-GraspNet </a>
-          can be employed for grasp pose estimation, allowing for comparison with our 
-          SuperQ-GRASP method: 1) CG+Mesh: This baseline applies Contact-GraspNet to the point cloud extracted from the complete 3D mesh of the target object; 
-          2) CG+Depth: This baseline applied Contact-GraspNet to the point cloud obtained from a single-view depth image as seen by a robot's gripper camera. 
-          <br>
-          <br>
-          Compared to the two baseline methods, our pipelilne can predict more stable grasp poses at the region 
-          closer to the camera, which is also the starting pose of the gripper in our case for the SPOT robot. 
-          Also, the predicted grasp poses are more concentrated in a specific region.
-          <div class="column has-text-centered">
-            <h3 class="title is-5">Qualitative Results on selected Objects
-            </h3>
-            <font size=1>(Click the videos to open them in a new tab, if you want to see them more clearly) <br>
-            <br>
-          </font>
-            Evaluation on the object
-            <div class="select is-small">     
-              <select id="single-menu-objects" onchange="updateSingleVideo()">
-              <option value="chair1" selected="selected">chair1</option>
-              <option value="chair2">chair2</option>
-              <option value="chair3">chair3</option>
-              <option value="cart1">cart1</option>
-              <option value="cart2">cart2</option>
-              <option value="cart3">cart3</option>
-              <option value="bucket1">bucket1</option>
-              <option value="bucket2">bucket2</option>
-              <option value="box1">box1</option>
-              <option value="box2">box2</option>
-              <option value="suitcase1">suitcase1</option>
-              <option value="suitcase2">suitcase2</option>
-              <option value="table1">table1</option>
-              <option value="table2">table2</option>
-              <option value="folding-chair">folding-chair</option>
-              <option value="chair1-real">chair1-real</option>
-              <option value="chair2-real">chair2-real</option>
-              <option value="table-real">table-real</option>
-              <option value="vacuum-cleaner-real">vacuum-cleaner-real</option>
-              <option value="suitcase-real">suitcase-real</option>
-            </select>
-           
-            
-            </div>
-            
-            <br/>
-            <br/>
-
-            <div class="synthetic-data-image-container">
-              <figure>
-                  <img src="./media/results/synthetic_data/chair1-contact-graspnet-depth.gif" alt="Image 1" id="synthetic-data-contact-graspnet-depth" onclick="window.open(this.src, '_blank');">
-                  <figcaption>Contact GraspNet+Depth</figcaption>
-              </figure>
-              <figure>
-                <img src="media/results/synthetic_data/chair1-contact-graspnet.gif" alt="Image 2" id="synthetic-data-contact-graspnet" onclick="window.open(this.src, '_blank');">
-                  <figcaption>Contact GraspNet+Mesh</figcaption>
-              </figure>
-              <figure>
-                                
-                <img src="media/results/synthetic_data/chair1-superq-grasp.gif" alt="Image 3" id="synthetic-data-superq-grasp" onclick="window.open(this.src, '_blank');">
-                  <figcaption>Superq Grasp</figcaption>
-              </figure>
-            </div>
-            
-          </div>
-
-        <b>NOTE:</b><br>
-        <font color="red">Red: </font> invalid grasp poses;  <font  color="#87ed2d">Green: </font>valid grasp poses <br>
-        <font color="blue">Blue dots: </font> observed depth point cloud as a partial view of the object
-        <br>
-        <br>
-        <br>
-        <br>
-        <h3 class="title is-4">Real-world Experiments</h3>
-        To validate the performance of our pipeline in real-world scenarios, we place each of the 5 real-world objects 
-        at a specified location with arbitrary orientations. 
-        The Boston Dynamics Spot robot is then tasked with 
-        estimating the object's pose, identifying a graspable pose, 
-        and executing a reach-and-grasp action.
-        <br><br>
-        
-        Our pipeline demonstrates a higher success rate across four test 
-        objects (two chairs, a vacuum cleaner, and a table), 
-        highlighting its capability to estimate valid grasp poses 
-        for larger objects with complex geometries, including high-genus objects like chairs.
-        Here are the demonstrations. 
-        <div class="columns">
-          <div class="column has-text-centered">
-            <h3 class="title is-5">Real-world Experiment examples</h3>
-
-            Visualize the real-world experiment for   
-            <div class="select is-small is-rounded">     
-              <select id="single-menu-real-world" onchange="updateRealWorldVideo()">
-              <option value="chair1" selected="selected">chair1</option>
-              <option value="chair2">chair2</option>
-              <option value="vacuum-cleaner">vacuum-cleaner</option>
-              <option value="luggage-case">luggage-case</option>
-              <option value="table">table</option>
-              </select>
-            </div>
-
-            <video  id="real-world-video" controls>
-              <source style="text-align: center; width: 100%" src="media/results/real-world/chair1.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-            </video>
-          </div>
-        </div>
-
-        <h3 class="title is-4">Additional Results</h3>
-        <h4 class="title is-5">Results on small objects</h4>
-        In addition, we show that our pipeline can have a competitive performance in comparison to the two baseline methods on 
-        the small synthetic objects that are typically placed on the taletop. The mesh models of the objects are taken from 
-        <a href="https://sapien.ucsd.edu/browse">PartNet-Mobility</a>
-        <div class="columns">
-          <div class="column has-text-centered">
-              <h3 class="title is-5">Qualitative Results on small Objects
-              </h3>
-              <font size=1>(Click the videos to open them in a new tab, if you want to see them more clearly) <br>
-              <br>
-            </font>
-              Evaluation on the object
-              <div class="select is-small">     
-                <select id="single-menu-small-objects" onchange="updateSingleVideoSmall()">
-                <option value="fuze" selected="selected">fuze</option>
-                <option value="kettle">kettle</option>
-                <option value="laptop">laptop</option>
-                <option value="mouse">mouse</option>
-                <option value="plier">plier</option>
-              </select>
-             
-              
-              </div>
-              
-              <br/>
-              <br/>
-  
-              <div class="synthetic-data-image-container">
-                <figure>
-                    <img src="./media/results/synthetic_data/fuze-contact-graspnet-depth.gif" alt="Image 1" id="synthetic-data-small-contact-graspnet-depth" onclick="window.open(this.src, '_blank');">
-                    <figcaption>Contact GraspNet+Depth</figcaption>
-                </figure>
-                <figure>
-                  <img src="media/results/synthetic_data/fuze-contact-graspnet.gif" alt="Image 2" id="synthetic-data-small-contact-graspnet" onclick="window.open(this.src, '_blank');">
-                    <figcaption>Contact GraspNet+Mesh</figcaption>
-                </figure>
-                <figure>
-                                  
-                  <img src="media/results/synthetic_data/fuze-superq-grasp.gif" alt="Image 3" id="synthetic-data-small-superq-grasp" onclick="window.open(this.src, '_blank');">
-                    <figcaption>Superq Grasp</figcaption>
-                </figure>
-              </div>
-              
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Supplementary Media</h2>
+          <div class="media-placeholder" role="note">
+            <div>
+              <p class="has-text-weight-semibold">Supplementary video placeholder</p>
+              <p>A project video is not included in the repository yet.</p>
             </div>
           </div>
-          <b>NOTE:</b><br>
-        <font color="red">Red: </font> invalid grasp poses;  <font  color="#87ed2d">Green: </font>valid grasp poses <br>
-        <font color="blue">Blue dots: </font> observed depth point cloud as a partial view of the object
-        <br>
-        <br>
-        <br>
-        <h4 class="title is-5">Custom graspable region</h4>
-        We also demonstrate that our pipeline can allow the user to select the custom graspable 
-        region. <b>For each individual superquadric at the edge of the object (labeled in different 
-        colors and associated with their own indices) , it can be regarded 
-        as one potential graspable region </b>, where grasp poses can be generated and evaluated. The 
-        user can also use the index of the superquadric directly to select the desirable graspable 
-        region to generate valid grasp poses, depending on the downstream tasks. 
-        
-        <div class="columns">
-          <div class="column has-text-centered">
-            <h3 class="title is-5">Custom graspable region selection examples</h3>
-
-            By default, the pipeline will select the closest superquadric to the 
-            current gripper as the graspable region to generate grasp poses: 
-            <video  id="region-closest-video" controls>
-              <source style="text-align: center; width: 70%" src="media/results/real-world/region_closest.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-            </video>
-            <br>
-            If specified, the user can also select the custom superquadric (in this example, 
-            the user wants to grasp one edge of the back of the chair, so the index of the superquadric, 
-            which is 54, can be fed to the pipeline) as the desired graspable region to generate grasp poses
-            <video  id="region-selected-video" controls>
-              <source style="text-align: center; width: 70%" src="media/results/real-world/region54.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-            </video>
-          </div>
-        </div>
-      </div>
-  </div>
-</section>
-
-
-
-<br>
-<br>
-
-
-<!-- <section class="section" id="BibTeX">
-  <div class="container is-max-widescreen content">
-    <h2 class="title">BibTeX</h2>
-    <pre><code>@inproceedings{shridhar2022peract,
-  title     = {Perceiver-Actor: A Multi-Task Transformer for Robotic Manipulation}, 
-  author    = {Shridhar, Mohit and Manuelli, Lucas and Fox, Dieter},
-  booktitle = {Proceedings of the 6th Conference on Robot Learning (CoRL)},
-  year      = {2022},
-}</code></pre>
-  </div>
-</section> -->
-
-
-<footer class="footer">
-  <div class="container">
-    <div class="columns is-centered">
-      <div class="column">
-        <div class="content has-text-centered">
-          <p>
-            Website template borrowed from <a href="https://peract.github.io/">PerAct</a> made primarily by <a href="https://mohitshridhar.com/">Mohit Shridhar</a> and <a href="https://github.com/nerfies/nerfies.github.io">NeRFies</a> made by <a href="https://keunhong.com/">Keunhong Park</a>. Great Appreciations to their excellent works!
-          </p>
         </div>
       </div>
     </div>
-  </div>
-</footer>
+  </section>
 
-
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column">
+          <div class="content has-text-centered">
+            <p>
+              Website template adapted from <a href="https://peract.github.io/">PerAct</a> and <a href="https://github.com/nerfies/nerfies.github.io">NeRFies</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>

@@ -21,6 +21,63 @@ body {
   font-variant: small-caps;
 }
 
+.project-figure {
+  margin: 2rem auto;
+  max-width: 1200px;
+  text-align: center;
+}
+
+.project-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.project-figure figcaption {
+  color: #4a4a4a;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0.75rem auto 0;
+  max-width: 1000px;
+}
+
+.teaser-figure {
+  margin-top: 0;
+}
+
+.results-figure {
+  max-width: 1100px;
+}
+
+.publication-links {
+  margin-top: 1rem;
+}
+
+.media-placeholder {
+  align-items: center;
+  background: #fff;
+  border: 1px dashed #9b9b9b;
+  border-radius: 6px;
+  color: #555;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  min-height: 9rem;
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.media-placeholder p {
+  margin: 0;
+}
+
+@media screen and (max-width: 768px) {
+  .has-text-justified {
+    text-align: left !important;
+  }
+}
+
 .teaser .hero-body {
   padding-top: 0;
   padding-bottom: 3rem;
@@ -187,4 +244,3 @@ body {
 .justify {
   text-align: justify;
 }
-
