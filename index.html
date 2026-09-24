@@ -16,6 +16,7 @@
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
   <script src="./static/js/index.js"></script>
+  <script src="./static/js/qualitative-videos.js" defer></script>
 </head>
 
 <body>
@@ -53,9 +54,12 @@
         <figure class="project-figure teaser-figure">
           <img src="media/intro/teaser_cropped.png" alt="Grasp-TAGS overview: candidate grasps lead to different rearrangement outcomes, and the critic-distilled selector chooses the grasp with highest predicted utility.">
           <figcaption>
-            Different feasible initial grasps can yield substantially different loco-manipulation outcomes. Grasp-TAGS ranks candidate grasps by predicted downstream utility before executing the policy.
+            Overview of Grasp-TAGS: different feasible grasp poses can lead to different loco-manipulation outcomes, so a grasp-conditioned PPO policy and critic-distilled selector rank candidates by predicted downstream utility before execution.
           </figcaption>
         </figure>
+        <p class="teaser-summary">
+          Grasp-TAGS selects the best grasp with the highest predicted downstream utility before policy execution for loco-manipulation tasks involving large objects.
+        </p>
       </div>
     </div>
   </section>
@@ -84,21 +88,49 @@
     <div class="container is-max-widescreen">
       <div class="columns is-centered">
         <div class="column is-four-fifths">
-          <h2 class="title is-3">Task-Aware Grasp Selection</h2>
+          <h2 class="title is-3">Motivation</h2>
           <div class="content has-text-justified">
             <p>
               Large objects such as chairs, carts, and buckets require coordinated base and arm motion to reach a desired planar pose. Although several candidate grasps may be feasible and stable, each establishes a different robot-object interaction configuration. Those configurations affect controllability, long-horizon behavior, and ultimately task success.
+              
+              <br><br>
+              For example, the same chair and target can lead to markedly different outcomes depending on the initial grasp. The comparison below shows that a backrest grasp supports reliable target alignment, whereas the two armrest grasps are less favorable for the downstream motion to the chair backward
+              <figure class="project-figure qualitative-comparison-figure">
+                <img src="media/results/synthetic_data/qualitative.png" alt="Qualitative comparison of three initial chair grasps: the backrest grasp succeeds, while one armrest grasp has average alignment and another fails.">
+                <figcaption>
+                  Qualitative comparison across initial grasp poses. The backrest grasp produces better final alignment with the target pose than the two armrest grasps to move the chair backward
+                </figcaption>
+              </figure>
+              For different target object poses, the optimal initial grasp may vary. As is illustrated below, if it's to move the chair sideways, the grasp poses on the armrests are more preferrable to the one on the chair backrest.
+
+              <div class="columns is-variable is-6 is-centered task-outcome-gifs">
+                <div class="column is-5">
+                  <figure class="task-outcome-gif">
+                    <img src="media/figures/success-chair-move.gif" alt="Successful chair-moving rollout after selecting a favorable grasp pose.">
+                    <figcaption>A favorable grasp configuration enables the robot to move and align the chair with its target pose.</figcaption>
+                  </figure>
+                </div>
+                <div class="column is-5">
+                  <figure class="task-outcome-gif">
+                    <img src="media/figures/failure-chair-move.gif" alt="Failed chair-moving rollout caused by a less useful grasp pose.">
+                    <figcaption>A less useful grasp configuration produces an unfavorable downstream trajectory and fails to align the chair.</figcaption>
+                  </figure>
+                </div>
+              </div>
             </p>
             <p>
-              Grasp-TAGS treats the initial grasp as a task decision rather than a fixed setup step. For a rearrangement goal, it evaluates the expected utility of every candidate grasp and selects the one most suitable for the downstream prehensile manipulation task.
+              <strong>Task-aware grasp selection</strong> is the pre-execution decision of choosing the grasp expected to best support a specified downstream task. Rather than selecting a grasp only because it is reachable or stable, it ranks feasible candidates by their predicted long-horizon utility for the current object pose and goal.
+            </p>
+            <p>
+              Grasp-TAGS uses this ranking to select a candidate before the manipulation policy runs. The selected grasp gives the policy a more favorable robot-object configuration from which to complete the planned rearrangement.
             </p>
           </div>
         </div>
       </div>
-      <figure class="project-figure">
-        <img src="media/intro/hierarchy.png" alt="Grasp-TAGS pipeline showing PPO training, critic distillation into a grasp selection module, and deployment.">
+      <figure class="project-figure overview-figure">
+        <img src="media/figures/grasp-tags-overview.jpg" alt="Grasp-TAGS overview: candidate chair grasps are ranked by a critic-distilled selector according to predicted downstream utility, then the highest-ranked grasp is executed for successful rearrangement.">
         <figcaption>
-          Grasp-TAGS first trains a hierarchical PPO policy, then distills its critic into a grasp selection module. At deployment, the module selects a candidate grasp using non-privileged pre-interaction observations.
+          Grasp-TAGS ranks candidate grasp poses by predicted downstream utility for the current goal, selects the best candidate, and then executes the learned policy.
         </figcaption>
       </figure>
     </div>
@@ -110,17 +142,51 @@
         <div class="column is-four-fifths">
           <h2 class="title is-3">Method</h2>
           <div class="content has-text-justified">
+            <h3 class="title is-4">Overview</h3>
             <p>
-              The framework uses a hierarchical controller: a pretrained low-level locomotion controller maintains stable base motion, while a high-level PPO policy produces task-level base-velocity and arm-joint commands. During training, each episode samples one feasible initial grasp and a target object pose. Training a single grasp-conditioned policy across candidates captures the interaction dynamics of multiple grasp configurations while yielding a common value function for comparison.
+              Unlike conventional mobile-manipulation settings that assume a fixed grasp configuration, Grasp-TAGS considers multiple feasible grasp poses on the target object. Each pose induces a distinct robot–object interaction configuration and, consequently, different manipulation dynamics. The objective is to learn one manipulation policy that transports the object to a desired planar pose under different initial grasps, then select at inference time the grasp with the highest expected utility for completing the rearrangement task.
+            </p>
+          </div>
+        </div>
+      </div>
+      <figure class="project-figure hierarchy-figure">
+        <img src="media/intro/hierarchy.png" alt="Grasp-TAGS pipeline showing PPO training, critic distillation into a grasp selection module, and deployment.">
+        <figcaption>
+          Overview of the Grasp-TAGS pipeline. A hierarchical PPO policy performs loco-manipulation using a pretrained low-level controller; its trained critic is then distilled into a grasp-selection module that selects the candidate with the highest predicted downstream utility for the target object pose before policy execution.
+        </figcaption>
+      </figure>
+
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <div class="content has-text-justified">
+            <h3 class="title is-4">Stage 1: Hierarchical Policy Learning</h3>
+            <p>
+              Large-object rearrangement requires coordinated locomotion and manipulation over long horizons. Because directly learning a unified whole-body policy over all robot joints is difficult in a high-dimensional action space with complex robot–object interactions, Grasp-TAGS adopts a hierarchical controller: a pretrained low-level locomotion controller maintains stable base motion, while a high-level task policy generates commands for object rearrangement.
             </p>
             <p>
-              The PPO critic estimates long-horizon return from the initial state and therefore encodes the expected downstream utility of each grasp. Because the critic depends on simulator-only physical information, Grasp-TAGS distills its predictions into a grasp utility network that receives only the candidate grasp configuration and goal information available before contact. The distilled network ranks the candidates at inference time, and the selected grasp initializes the learned manipulation policy.
+              The high-level command specifies base linear velocity, base yaw rate, and six arm-joint displacements. Arm commands are executed by PD controllers to hold the object, while the velocity commands are processed by the fixed locomotion policy to maintain stability and track the desired base motion. The high-level controller is trained with PPO in RSL-RL, while the pretrained low-level policy remains fixed.
             </p>
-            <ul>
-              <li>A unified goal- and grasp-conditioned loco-manipulation policy trained across multiple feasible grasps.</li>
-              <li>A critic-distilled utility network for selecting a grasp before physical interaction.</li>
-              <li>Simulation evaluation on chairs, carts, and buckets with goal-conditioned planar rearrangement tasks.</li>
-            </ul>
+
+            <h3 class="title is-4">Stage 2: Grasp-Conditioned Loco-manipulation Policy Training</h3>
+            <p>
+              Rather than training an independent high-level policy for every grasp, Grasp-TAGS trains one PPO policy across multiple initial grasp configurations. At the start of each episode, the environment samples a predefined feasible grasp pose; after establishing the grasp, the robot transports the object to a target planar pose. The initial grasp is implicitly represented by the arm joint angles, allowing the policy to learn behaviors across both grasp configurations and rearrangement objectives.
+            </p>
+            <p>
+              This unified policy captures the diverse interaction dynamics induced by different robot–object contact configurations without separate training procedures. Its value function also provides a common measure of expected long-horizon manipulation performance across candidates. The reward encourages task completion and smooth motion while penalizing undesired contacts and object toppling.
+            </p>
+
+            <h3 class="title is-4">Stage 3: Critic Distillation for Task-Aware Grasp Selection</h3>
+            <p>
+              The PPO critic estimates the expected discounted return from its critic observation, implicitly encoding the downstream utility of each grasp: configurations that enable more successful, efficient, and stable rearrangement receive higher value estimates. However, the critic uses privileged simulator information, including physical properties such as object mass and velocity, that is unavailable before interaction at deployment.
+            </p>
+            <p>
+              Grasp-TAGS distills these grasp-dependent critic values into a lightweight utility network that uses only the candidate grasp configuration and target object pose in the initial object frame. After policy training, the network regresses its utility predictions to critic values from sampled initial states. At inference time, it evaluates every candidate, selects the grasp with the highest predicted utility, and executes the learned manipulation policy conditioned on that grasp.
+            </p>
+
+            <h3 class="title is-4">Summary</h3>
+            <p>
+              Grasp-TAGS combines a stable hierarchical loco-manipulation policy, grasp-conditioned PPO training, and critic distillation to turn long-horizon task value into a practical pre-interaction grasp decision. This lets the robot choose the grasp expected to best support the desired large-object rearrangement before policy execution.
+            </p>
           </div>
         </div>
       </div>
@@ -133,29 +199,328 @@
         <div class="column is-four-fifths">
           <h2 class="title is-3">Results</h2>
           <div class="content has-text-justified">
+            <h3 class="title is-4">Dataset</h3>
             <p>
-              We evaluate in IsaacLab on eight household objects: three chairs, two carts, and three buckets. The comparison includes the best policy trained for an individual grasp, a unified grasp-conditioned policy with random candidate selection, and the full Grasp-TAGS pipeline. Across all evaluated objects, task-aware selection achieves the highest success rate and consistently reduces final angular error.
+              We construct a dataset of eight common large household objects from Fab: three chairs, two carts, and three buckets. These categories cover diverse geometric structures while remaining representative of the large-object rearrangement settings considered in this work.
             </p>
             <p>
-              For Chair1, Grasp-TAGS reaches a 93.65% success rate, compared with 75.88% for random grasp selection and 69.02–78.20% for the individual single-grasp policies. The qualitative comparison below illustrates why: grasping the chair backrest enables reliable alignment, while armrest grasps lead to less favorable downstream behavior.
+              For each object, we manually define feasible initial grasp configurations and compute their inverse-kinematics solutions. Chairs use candidate grasps on the two armrests and backrest; carts use the two sides of the basket and the handle; and buckets use their two edges.
             </p>
           </div>
         </div>
       </div>
 
-      <figure class="project-figure">
-        <img src="media/results/synthetic_data/qualitative.png" alt="Qualitative comparison of three initial chair grasps: the backrest grasp succeeds, while one armrest grasp has average alignment and another fails.">
+      <figure class="project-figure dataset-figure">
+        <img src="media/figures/dataset.jpg" alt="Eight household objects in the evaluation dataset: three chairs, two carts, and three buckets. Red dots mark predefined candidate grasp locations.">
         <figcaption>
-          Qualitative comparison across initial grasp poses. The backrest grasp produces better final alignment with the target pose than the two armrest grasps.
+          Evaluation dataset and predefined candidate grasp locations (red). The dataset contains three chairs, two carts, and three buckets.
         </figcaption>
       </figure>
+
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <div class="content has-text-justified">
+            <h3 class="title is-4">Qualitative Performance</h3>
+            <p>
+              The initial grasp configuration substantially affects downstream loco-manipulation performance. The example below visualizes the relative grasp utility predicted for a target object pose: the selector uses this task-aware estimate to choose the grasp expected to provide the most effective control throughout execution.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <figure class="project-figure qualitative-utility-figure">
+        <img src="media/results/synthetic_data/qualitative2.svg" alt="Illustration of Grasp-TAGS utility predictions for candidate grasp poses around a target object pose shown in green.">
+        <figcaption>
+          Illustrative grasp-utility predictions for a target object pose (green mesh). Color indicates the relative utility estimated by Grasp-TAGS: green denotes higher predicted downstream utility and red denotes lower utility.
+        </figcaption>
+      </figure>
+
+      <div class="qualitative-video-comparisons" aria-labelledby="video-comparisons-title">
+        <h4 id="video-comparisons-title" class="title is-5 has-text-centered">Interactive Rollout Comparisons</h4>
+        <p class="has-text-centered">
+          Choose an object and target object pose to compare Grasp-TAGS with random grasp selection and the fixed single-grasp policies. Each grid contains all available methods for the same evaluation setting.
+        </p>
+
+        <div class="qualitative-video-controls">
+          <div class="video-filter">
+            <span class="video-filter-label">Object category</span>
+            <div class="video-filter-options" role="group" aria-label="Choose an object">
+              <button class="video-filter-button is-active" type="button" data-video-object="chair-1" aria-pressed="true">Chair 1</button>
+              <button class="video-filter-button" type="button" data-video-object="chair-2" aria-pressed="false">Chair 2</button>
+              <button class="video-filter-button" type="button" data-video-object="chair-3" aria-pressed="false">Chair 3</button>
+              <!-- <button class="video-filter-button" type="button" data-video-object="cart-1" aria-pressed="false">Cart 1</button> -->
+              <button class="video-filter-button" type="button" data-video-object="cart-2" aria-pressed="false">Cart 2</button>
+              <button class="video-filter-button" type="button" data-video-object="bucket-1" aria-pressed="false">Bucket 1</button>
+              <button class="video-filter-button" type="button" data-video-object="bucket-2" aria-pressed="false">Bucket 2</button>
+              <button class="video-filter-button" type="button" data-video-object="bucket-3" aria-pressed="false">Bucket 3</button>
+            </div>
+          </div>
+          <div class="video-filter">
+            <span class="video-filter-label">Target Object Pose</span>
+            <div class="video-filter-options" role="group" aria-label="Choose a target object pose">
+              <button class="video-filter-button is-active" type="button" data-video-target-set="01" aria-pressed="true">Target Object Pose 1</button>
+              <button class="video-filter-button" type="button" data-video-target-set="02" aria-pressed="false">Target Object Pose 2</button>
+              <button class="video-filter-button" type="button" data-video-target-set="03" aria-pressed="false">Target Object Pose 3</button>
+              <button class="video-filter-button" type="button" data-video-target-set="04" aria-pressed="false">Target Object Pose 4</button>
+            </div>
+          </div>
+        </div>
+
+        <p id="qualitative-video-selection" class="qualitative-video-selection" aria-live="polite"></p>
+        <div class="qualitative-video-row" role="region" aria-label="Selected video comparison" tabindex="0">
+          <div id="qualitative-video-grid" class="qualitative-video-grid"></div>
+        </div>
+        <noscript>
+          <p class="has-text-centered">Enable JavaScript to select and view the rollout comparisons.</p>
+        </noscript>
+      </div>
+
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <div class="content has-text-justified">
+            <h3 class="title is-4">Quantitative Statistics</h3>
+          </div>
+        </div>
+      </div>
 
       <figure class="project-figure results-figure">
         <img src="media/results/synthetic_data/success-rates-1.png" alt="Bar chart comparing policy success rates by object. Grasp-TAGS has the highest success rate for Chair1–3, Cart1–2, and Bucket1–3.">
         <figcaption>
-          Success rates for the best single-grasp policy, the multi-grasp policy with random selection, and Grasp-TAGS. The task-aware selector achieves the highest rate for every evaluated object.
+          Success rates for the best single-grasp policy, the multi-grasp policy with random selection, and Grasp-TAGS. Grasp-TAGS achieves the highest success rate across all evaluated objects.
         </figcaption>
       </figure>
+
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <div class="content has-text-justified">
+            <p>
+              Combining the unified grasp-conditioned policy with the proposed grasp-selection network improves overall task success. Grasp-TAGS achieves the highest success rate across all evaluated objects, showing that task-aware grasp selection improves the probability of completing the target rearrangement task.
+            </p>
+            <p>
+              For Chair1, Grasp-TAGS reaches a 93.65% success rate, compared with 75.88% for random grasp selection and 70.09–78.20% for the individual single-grasp policies. The same trend is observed for the other objects, demonstrating that task-aware selection can outweigh the advantage of individually specialized policies.
+            </p>
+            <p>
+              The table below reports simulated large-object rearrangement results. <em>PPO<sub>i</sub></em> denotes policies trained for individual candidate grasps, with slash-separated values corresponding to each candidate (three for chairs and carts, two for buckets). Higher success rates are better; lower positional and angular errors are better.
+            </p>
+          </div>
+
+          <div class="table-container quantitative-table" role="region" aria-label="Quantitative task-performance statistics" tabindex="0">
+            <table class="table is-fullwidth is-striped is-hoverable">
+              <thead>
+                <tr>
+                  <th scope="col">Object</th>
+                  <th scope="col">Metric</th>
+                  <th scope="col">PPO<sub>i</sub></th>
+                  <th scope="col">PPO<sub>g</sub> + random</th>
+                  <th scope="col">Grasp-TAGS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="rowgroup" rowspan="4">Chair1</th>
+                  <th class="metric" scope="row">Success rate (%)</th>
+                  <td class="values">70.09 / 75.46 / 78.20</td>
+                  <td class="values">75.88</td>
+                  <td class="values">93.65</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Planar positional error</th>
+                  <td class="values">0.0292 / 0.0250 / 0.0366</td>
+                  <td class="values">0.0281</td>
+                  <td class="values">0.0162</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Angular error</th>
+                  <td class="values">0.3571 / 0.2850 / 0.2802</td>
+                  <td class="values">0.2407</td>
+                  <td class="values">0.0712</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Keypoint angular error</th>
+                  <td class="values">20.4597 / 16.3271 / 16.0567</td>
+                  <td class="values">13.7906</td>
+                  <td class="values">4.0793</td>
+                </tr>
+                <tr>
+                  <th scope="rowgroup" rowspan="4">Chair2</th>
+                  <th class="metric" scope="row">Success rate (%)</th>
+                  <td class="values">63.79 / 71.51 / 70.00</td>
+                  <td class="values">60.28</td>
+                  <td class="values">84.72</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Planar positional error</th>
+                  <td class="values">0.0340 / 0.0161 / 0.0142</td>
+                  <td class="values">0.0450</td>
+                  <td class="values">0.0239</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Angular error</th>
+                  <td class="values">0.5268 / 0.3421 / 0.3732</td>
+                  <td class="values">0.4382</td>
+                  <td class="values">0.1308</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Keypoint angular error</th>
+                  <td class="values">30.1858 / 19.5889 / 21.3821</td>
+                  <td class="values">25.1091</td>
+                  <td class="values">7.4923</td>
+                </tr>
+                <tr>
+                  <th scope="rowgroup" rowspan="4">Chair3</th>
+                  <th class="metric" scope="row">Success rate (%)</th>
+                  <td class="values">75.93 / 68.41 / 72.22</td>
+                  <td class="values">72.49</td>
+                  <td class="values">89.62</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Planar positional error</th>
+                  <td class="values">0.0204 / 0.0626 / 0.0307</td>
+                  <td class="values">0.0410</td>
+                  <td class="values">0.0309</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Angular error</th>
+                  <td class="values">0.3546 / 0.4425 / 0.3628</td>
+                  <td class="values">0.3616</td>
+                  <td class="values">0.1212</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Keypoint angular error</th>
+                  <td class="values">20.3148 / 25.3516 / 20.7884</td>
+                  <td class="values">20.7177</td>
+                  <td class="values">6.9462</td>
+                </tr>
+                <tr>
+                  <th scope="rowgroup" rowspan="4">Cart1</th>
+                  <th class="metric" scope="row">Success rate (%)</th>
+                  <td class="values">82.13 / 68.48 / 67.38</td>
+                  <td class="values">84.62</td>
+                  <td class="values">95.51</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Planar positional error</th>
+                  <td class="values">0.0291 / 0.0989 / 0.0924</td>
+                  <td class="values">0.0426</td>
+                  <td class="values">0.0283</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Angular error</th>
+                  <td class="values">0.1716 / 0.2522 / 0.3781</td>
+                  <td class="values">0.1471</td>
+                  <td class="values">0.0575</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Keypoint angular error</th>
+                  <td class="values">9.8312 / 14.5265 / 20.9177</td>
+                  <td class="values">8.4009</td>
+                  <td class="values">3.2925</td>
+                </tr>
+                <tr>
+                  <th scope="rowgroup" rowspan="4">Cart2</th>
+                  <th class="metric" scope="row">Success rate (%)</th>
+                  <td class="values">62.96 / 81.32 / 72.75</td>
+                  <td class="values">64.38</td>
+                  <td class="values">86.89</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Planar positional error</th>
+                  <td class="values">0.0901 / 0.0235 / 0.0762</td>
+                  <td class="values">0.1158</td>
+                  <td class="values">0.0551</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Angular error</th>
+                  <td class="values">0.4028 / 0.3335 / 0.3844</td>
+                  <td class="values">0.3710</td>
+                  <td class="values">0.1321</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Keypoint angular error</th>
+                  <td class="values">23.0807 / 19.1110 / 22.0228</td>
+                  <td class="values">21.2587</td>
+                  <td class="values">7.5734</td>
+                </tr>
+                <tr>
+                  <th scope="rowgroup" rowspan="4">Bucket1</th>
+                  <th class="metric" scope="row">Success rate (%)</th>
+                  <td class="values">88.89 / 86.18</td>
+                  <td class="values">81.86</td>
+                  <td class="values">92.58</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Planar positional error</th>
+                  <td class="values">0.0101 / 0.0280</td>
+                  <td class="values">0.0201</td>
+                  <td class="values">0.0138</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Angular error</th>
+                  <td class="values">0.1428 / 0.2250</td>
+                  <td class="values">0.2455</td>
+                  <td class="values">0.1279</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Keypoint angular error</th>
+                  <td class="values">8.1790 / 12.8935</td>
+                  <td class="values">14.0673</td>
+                  <td class="values">7.3268</td>
+                </tr>
+                <tr>
+                  <th scope="rowgroup" rowspan="4">Bucket2</th>
+                  <th class="metric" scope="row">Success rate (%)</th>
+                  <td class="values">76.10 / 81.08</td>
+                  <td class="values">82.23</td>
+                  <td class="values">91.87</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Planar positional error</th>
+                  <td class="values">0.0219 / 0.0220</td>
+                  <td class="values">0.0144</td>
+                  <td class="values">0.0105</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Angular error</th>
+                  <td class="values">0.3370 / 0.2490</td>
+                  <td class="values">0.2822</td>
+                  <td class="values">0.1343</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Keypoint angular error</th>
+                  <td class="values">19.3076 / 14.2670</td>
+                  <td class="values">16.1711</td>
+                  <td class="values">7.6976</td>
+                </tr>
+                <tr>
+                  <th scope="rowgroup" rowspan="4">Bucket3</th>
+                  <th class="metric" scope="row">Success rate (%)</th>
+                  <td class="values">79.91 / 70.00</td>
+                  <td class="values">70.85</td>
+                  <td class="values">83.89</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Planar positional error</th>
+                  <td class="values">0.0258 / 0.0265</td>
+                  <td class="values">0.0689</td>
+                  <td class="values">0.0290</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Angular error</th>
+                  <td class="values">0.2598 / 0.3199</td>
+                  <td class="values">0.3609</td>
+                  <td class="values">0.2276</td>
+                </tr>
+                <tr>
+                  <th class="metric" scope="row">Keypoint angular error</th>
+                  <td class="values">14.8877 / 18.3309</td>
+                  <td class="values">20.6764</td>
+                  <td class="values">13.0426</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -163,12 +528,11 @@
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column is-four-fifths">
-          <h2 class="title is-3">Supplementary Media</h2>
-          <div class="media-placeholder" role="note">
-            <div>
-              <p class="has-text-weight-semibold">Supplementary video placeholder</p>
-              <p>A project video is not included in the repository yet.</p>
-            </div>
+          <h2 class="title is-3">Conclusion</h2>
+          <div class="content has-text-justified">
+            <p>
+              Grasp-TAGS is a task-aware grasp-selection framework for prehensile, goal-conditioned large-object loco-manipulation. By training one unified manipulation policy across multiple initial grasp configurations, its learned critic captures the long-horizon utility of different grasps. Distilling these values into a lightweight grasp-utility network enables the robot to select a suitable grasp before physical interaction without explicitly estimating privileged object properties. Our simulation results show improved rearrangement success over fixed and randomly selected grasp configurations; future work will extend evaluation to additional household objects and real-world deployment on the SPOT platform.
+            </p>
           </div>
         </div>
       </div>
